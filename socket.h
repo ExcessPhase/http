@@ -1,12 +1,13 @@
 #pragma once
 #include <system_error>
 #include <cerrno>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 
 namespace foelsche
 {
-namespace SOCKET
+namespace linux
 {
 struct socket
 {	const int m_i;

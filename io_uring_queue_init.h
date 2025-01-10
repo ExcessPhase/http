@@ -2,6 +2,7 @@
 #include <liburing.h>
 #include <system_error>
 #include <cerrno>
+#include <new>
 
 
 namespace foelsche
@@ -19,6 +20,12 @@ struct io_uring_queue_init
 	{	io_uring_queue_exit(&m_sRing);
 	}
 //int io_uring_queue_init(unsigned entries, struct io_uring *ring, unsigned flags);
+//struct io_uring_sqe *io_uring_get_sqe(struct io_uring *ring);
+	static struct io_uring_sqe *io_uring_get_sqe(struct io_uring *const ring)
+	{	const auto p = ::io_uring_get_sqe(ring);
+		if (!p)
+			throw std::bad_alloc();
+	}
 };
 }
 }

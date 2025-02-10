@@ -7,7 +7,7 @@ namespace foelsche
 namespace linux
 {
 void io_data::handleW(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE)
-{	m_sHandler(_pRing, _pCQE, getResource(_pRing, _pCQE));
+{	m_sHandler(_pRing, _pCQE, getResource(_pRing, _pCQE), *this);
 	_pRing->m_sIoData.erase(shared_from_this());
 }
 }

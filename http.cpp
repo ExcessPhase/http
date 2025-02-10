@@ -18,12 +18,20 @@ enum class command
 	READ,
 	WRITE
 };
+static const io_data::HANDLER s_sReceive = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, std::shared_ptr<io_data_created> _sData, io_data&_r)
+{	ring->createRecv(io_uring_queue_init::getFD(*_sData), s_sReceive, _sData);
+};
+static const io_data::HANDLER s_sAccept = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, std::shared_ptr<io_data_created> _sData, io_data&_r)
+{	ring->createAccept(io_uring_queue_init::getServerSocket(_r), s_sAccept, _r.m_sData);
+	ring->createRecv(io_uring_queue_init::getFD(*_sData), s_sReceive, _sData);
+};
 static void handle_accept(io_uring_queue_init* ring, io_uring_cqe* cqe, std::unique_ptr<io_data> data, const int server_socket_fd);
 static const std::map<io_data::enumType, io_data::HANDLER> sType2Handler = {
 	{	io_data::eAccept, 
-		[](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, std::shared_ptr<io_data_created> _sData)
-		{
-		}
+		s_sAccept
+	},
+	{	io_data::eReceive,
+		s_sReceive
 	}
 };
 static void event_loop(io_uring_queue_init* const ring, const int server_socket_fd)

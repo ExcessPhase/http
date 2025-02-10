@@ -71,5 +71,11 @@ std::shared_ptr<io_data> io_uring_queue_init::createRecv(const int _i, io_data::
 		std::make_shared<io_data_recv>(this, _i, std::move(_sHandler), std::move(_sData)).get()->shared_from_this()
 	).first;
 }
+int io_uring_queue_init::getServerSocket(const io_data&_r)
+{	return dynamic_cast<const io_data_accept&>(_r).m_iServerSocket;
+}
+int io_uring_queue_init::getFD(io_data_created&_r)
+{	return dynamic_cast<const io_data_created_fd&>(_r).m_iID;
+}
 }
 }

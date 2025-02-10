@@ -32,6 +32,8 @@ struct io_uring_queue_init
 	}
 	std::shared_ptr<io_data> createAccept(const int, io_data::HANDLER, std::shared_ptr<io_data_created>);
 	std::shared_ptr<io_data> createRecv(const int, io_data::HANDLER, std::shared_ptr<io_data_created>);
+	static int getServerSocket(const io_data&);
+	static int getFD(io_data_created&);
 };
 }
 }

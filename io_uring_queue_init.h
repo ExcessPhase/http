@@ -30,8 +30,8 @@ struct io_uring_queue_init
 		else
 			throw std::bad_alloc();
 	}
-	std::shared_ptr<io_data> createAccept(const int);
-	std::shared_ptr<io_data> createRecv(const int);
+	std::shared_ptr<io_data> createAccept(const int, io_data::HANDLER, std::shared_ptr<io_data_created>);
+	std::shared_ptr<io_data> createRecv(const int, io_data::HANDLER, std::shared_ptr<io_data_created>);
 };
 }
 }

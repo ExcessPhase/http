@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <fcntl.h>
 #include <cstring>
+#include <map>
 namespace foelsche
 {
 namespace http
@@ -17,25 +18,29 @@ enum class command
 	READ,
 	WRITE
 };
-static void handle_accept(foelsche::linux::io_uring_queue_init* ring, io_uring_cqe* cqe, std::unique_ptr<io_data> data, const int server_socket_fd);
-static void event_loop(foelsche::linux::io_uring_queue_init* const ring, const int server_socket_fd)
-{	while (true)
-	{	io_uring_cqe* cqe;
-		int ret = io_uring_wait_cqe(ring, &cqe);
-		if (ret < 0)
-		{	std::cerr << "io_uring_wait_cqe failed: " << std::strerror(-ret) << std::endl;
-			break;
+static void handle_accept(io_uring_queue_init* ring, io_uring_cqe* cqe, std::unique_ptr<io_data> data, const int server_socket_fd);
+static const std::map<io_data::enumType, io_data::HANDLER> sType2Handler = {
+	{	io_data::eAccept, 
+		[](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, std::shared_ptr<io_data_created> _sData)
+		{
 		}
+	}
+};
+static void event_loop(io_uring_queue_init* const ring, const int server_socket_fd)
+{	while (true)
+	{	//io_uring_cqe* cqe;
+		//int ret = io_uring_wait_cqe(ring, &cqe);
+		io_uring_wait_cqe sCQE(&ring->m_sRing);
 
 		// Reclaim ownership of the io_data pointer
 
-		if (cqe->res < 0)
-		{	std::cerr << "Async operation failed: " << std::strerror(-cqe->res) << std::endl;
+		if (sCQE.m_pCQE->res < 0)
+		{	std::cerr << "Async operation failed: " << std::strerror(-sCQE.m_pCQE->res) << std::endl;
 			//close(data->fd);
 		}
 		else
-		{	auto data(static_cast<io_data*>(io_uring_cqe_get_data(cqe))->shared_from_this());
-			data->handle(ring, cqe);
+		{	auto data(static_cast<io_data*>(io_uring_cqe_get_data(sCQE.m_pCQE))->shared_from_this());
+			data->handleW(ring, sCQE.m_pCQE);//, sType2Handler.at(data->getType()));
 #if 0
 			switch (command(data->operation))
 			{	case command::ACCEPT:
@@ -48,13 +53,12 @@ static void event_loop(foelsche::linux::io_uring_queue_init* const ring, const i
 			}
 #endif
 		}
-		// Mark the CQE as seen
-		io_uring_cqe_seen(ring, cqe);
 	}
 }
 static void submit_accept(foelsche::linux::io_uring_queue_init *const ring, const int);
 static void handle_accept(foelsche::linux::io_uring_queue_init* const ring, io_uring_cqe* const cqe, std::unique_ptr<io_data> data, const int server_socket_fd)
 {
+#if 0
 	int client_fd = cqe->res;
 	std::cout << "Accepted connection. Socket FD: " << client_fd << std::endl;
 
@@ -80,9 +84,12 @@ static void handle_accept(foelsche::linux::io_uring_queue_init* const ring, io_u
 
 	// Submit another accept request to keep accepting new connections
 	submit_accept(ring, server_socket_fd);
+#endif
 }
 static void submit_accept(foelsche::linux::io_uring_queue_init *const ring, const int server_socket_fd)
-{	io_uring_sqe* const sqe = io_uring_get_sqe(ring);
+{
+#if 0
+	io_uring_sqe* const sqe = io_uring_get_sqe(ring);
 	 // Use std::unique_ptr for automatic memory management
 	std::unique_ptr<io_data> data = std::make_unique<io_data>();
 	data->fd = server_socket_fd;
@@ -98,6 +105,7 @@ static void submit_accept(foelsche::linux::io_uring_queue_init *const ring, cons
 	// Release the unique_ptr to avoid double-deletion
 	io_uring_sqe_set_data(sqe, data.release());
 	io_uring_submit(ring);
+#endif
 }
 }
 }

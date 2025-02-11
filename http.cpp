@@ -18,10 +18,10 @@ enum class command
 	READ,
 	WRITE
 };
-static const io_data::HANDLER s_sReceive = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, std::shared_ptr<io_data_created> _sData, io_data&_r)
+static const io_data::HANDLER s_sReceive = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
 {	ring->createRecv(s_sReceive, std::dynamic_pointer_cast<io_data_created_fd>(_sData));
 };
-static const io_data::HANDLER s_sAccept = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, std::shared_ptr<io_data_created> _sData, io_data&_r)
+static const io_data::HANDLER s_sAccept = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
 {	ring->createAccept(s_sAccept, std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData));
 	ring->createRecv(s_sReceive, std::dynamic_pointer_cast<io_data_created_fd>(_sData));
 };

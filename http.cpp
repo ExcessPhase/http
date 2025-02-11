@@ -19,11 +19,11 @@ enum class command
 	WRITE
 };
 static const io_data::HANDLER s_sReceive = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, std::shared_ptr<io_data_created> _sData, io_data&_r)
-{	ring->createRecv(io_uring_queue_init::getFD(*_sData), s_sReceive, _sData);
+{	ring->createRecv(s_sReceive, std::dynamic_pointer_cast<io_data_created_fd>(_sData));
 };
 static const io_data::HANDLER s_sAccept = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, std::shared_ptr<io_data_created> _sData, io_data&_r)
-{	ring->createAccept(io_uring_queue_init::getServerSocket(_r), s_sAccept, _r.m_sData);
-	ring->createRecv(io_uring_queue_init::getFD(*_sData), s_sReceive, _sData);
+{	ring->createAccept(s_sAccept, std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData));
+	ring->createRecv(s_sReceive, std::dynamic_pointer_cast<io_data_created_fd>(_sData));
 };
 static void handle_accept(io_uring_queue_init* ring, io_uring_cqe* cqe, std::unique_ptr<io_data> data, const int server_socket_fd);
 static const std::map<io_data::enumType, io_data::HANDLER> sType2Handler = {
@@ -137,6 +137,6 @@ int main(int, char**)
 		socket::bind(sSocket.m_i, reinterpret_cast<struct sockaddr*>(&server_addr), sizeof server_addr);
 		socket::listen(sSocket.m_i, SOMAXCONN);
 	}
-	submit_accept(&sRing, sSocket.m_i);
+	sRing.createAccept(s_sAccept, std::make_shared<io_data_created_fd>(sSocket.m_i, false));
 	event_loop(&sRing, sSocket.m_i);
 }

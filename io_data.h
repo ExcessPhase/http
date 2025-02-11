@@ -10,6 +10,19 @@ struct io_uring_queue_init;
 struct io_data_created:std::enable_shared_from_this<io_data_created>
 {	virtual ~io_data_created(void) = default;
 };
+struct io_data_created_fd:io_data_created
+{	const int m_iID;
+	const bool m_bClose;
+	io_data_created_fd(const int _i, const bool _bClose = true)
+		:m_iID(_i),
+		m_bClose(_bClose)
+	{
+	}
+	~io_data_created_fd(void)
+	{	if (m_bClose)
+			::close(m_iID);
+	}
+};
 struct io_data:std::enable_shared_from_this<io_data>
 {	typedef std::function<void(io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, std::shared_ptr<io_data_created>, io_data&) > HANDLER;
 	HANDLER m_sHandler;

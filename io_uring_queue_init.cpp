@@ -21,6 +21,7 @@ struct io_data_accept:io_data
 		//m_sFD(std::move(_sData))
 		//ring(_pRing)
 	{	io_uring_sqe* const sqe = io_uring_queue_init::io_uring_get_sqe(&_pRing->m_sRing);
+		sqe->user_data = reinterpret_cast<uintptr_t>(this);
 		io_uring_prep_accept(
 			sqe,
 			std::dynamic_pointer_cast<io_data_created_fd>(m_sData)->m_iID,
@@ -51,6 +52,7 @@ struct io_data_recv:io_data
 		const auto sFD = std::dynamic_pointer_cast<io_data_created_fd>(m_sData);
 		fcntl(sFD->m_iID, F_SETFL, fcntl(sFD->m_iID, F_GETFL, 0) | O_NONBLOCK);
 		io_uring_sqe* const sqe = io_uring_queue_init::io_uring_get_sqe(&_pRing->m_sRing);
+		sqe->user_data = reinterpret_cast<uintptr_t>(this);
 		io_uring_prep_recv(sqe, sFD->m_iID, m_sBuffer.data(), m_sBuffer.size(), 0);
 		io_uring_sqe_set_data(sqe, this);
 		io_uring_submit(&_pRing->m_sRing);

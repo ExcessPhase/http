@@ -44,7 +44,7 @@ static const std::map<io_data::enumType, io_data::HANDLER> sType2Handler = {
 	}
 };
 static void event_loop(io_uring_queue_init* const ring)
-{	while (true)
+{	for (std::size_t i = 0; i < 8; ++i)
 	{	//io_uring_cqe* cqe;
 		//int ret = io_uring_wait_cqe(ring, &cqe);
 		io_uring_wait_cqe sCQE(&ring->m_sRing);

@@ -27,7 +27,6 @@ struct io_uring_wait_cqe
 	~io_uring_wait_cqe(void)
 	{	::io_uring_cqe_seen(m_pRing, m_pCQE);
 	}
-	
 };
 }
 }

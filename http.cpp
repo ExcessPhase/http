@@ -19,7 +19,7 @@ enum class command
 	WRITE
 };
 static const io_data::HANDLER s_sReceive = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
-{	
+{
 	auto &r = std::dynamic_pointer_cast<io_data_created_buffer>(_sData)->m_s;
 	r.resize(cqe->res);
 	if (!r.empty())
@@ -36,7 +36,7 @@ static const io_data::HANDLER s_sAccept = [](io_uring_queue_init*const ring, ::i
 };
 static void handle_accept(io_uring_queue_init* ring, io_uring_cqe* cqe, std::unique_ptr<io_data> data, const int server_socket_fd);
 static const std::map<io_data::enumType, io_data::HANDLER> sType2Handler = {
-	{	io_data::eAccept, 
+	{	io_data::eAccept,
 		s_sAccept
 	},
 	{	io_data::eReceive,

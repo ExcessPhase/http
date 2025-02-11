@@ -23,13 +23,20 @@ struct io_data_created_fd:io_data_created
 			::close(m_iID);
 	}
 };
+struct io_data_created_buffer:io_data_created
+{	std::vector<char> m_s;
+	io_data_created_buffer(std::vector<char> _s)
+		:m_s(std::move(_s))
+	{
+	}
+};
 struct io_data:std::enable_shared_from_this<io_data>
 {	typedef std::function<void(io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created>&, io_data&) > HANDLER;
 	HANDLER m_sHandler;
-	std::shared_ptr<io_data_created> m_sData;
-	io_data(HANDLER _s, std::shared_ptr<io_data_created> _sData)
+	const std::shared_ptr<io_data_created> m_sData;
+	io_data(HANDLER _s, const std::shared_ptr<io_data_created> &_sData)
 		:m_sHandler(std::move(_s)),
-		m_sData(std::move(_sData))
+		m_sData(_sData)
 	{
 	}
 	virtual ~io_data(void) = default;

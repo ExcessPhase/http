@@ -30,8 +30,8 @@ struct io_uring_queue_init
 		else
 			throw std::bad_alloc();
 	}
-	std::shared_ptr<io_data> createAccept(io_data::HANDLER, std::shared_ptr<io_data_created_fd>);
-	std::shared_ptr<io_data> createRecv(io_data::HANDLER, std::shared_ptr<io_data_created_fd>);
+	std::shared_ptr<io_data> createAccept(io_data::HANDLER, const std::shared_ptr<io_data_created_fd>&);
+	std::shared_ptr<io_data> createRecv(io_data::HANDLER, const std::shared_ptr<io_data_created_fd>&);
 	static int getServerSocket(const io_data&);
 	static int getFD(io_data_created&);
 };

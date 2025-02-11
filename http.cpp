@@ -19,7 +19,16 @@ enum class command
 	WRITE
 };
 static const io_data::HANDLER s_sReceive = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
-{	ring->createRecv(s_sReceive, std::dynamic_pointer_cast<io_data_created_fd>(_sData));
+{	
+	auto &r = std::dynamic_pointer_cast<io_data_created_buffer>(_sData)->m_s;
+	r.resize(cqe->res);
+	if (!r.empty())
+	{	ring->createRecv(s_sReceive, std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData));
+		for (const auto c : r)
+			if (std::isprint(c))
+				std::cerr << c;
+		std::cerr << std::endl;
+	}
 };
 static const io_data::HANDLER s_sAccept = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
 {	ring->createAccept(s_sAccept, std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData));
@@ -34,7 +43,7 @@ static const std::map<io_data::enumType, io_data::HANDLER> sType2Handler = {
 		s_sReceive
 	}
 };
-static void event_loop(io_uring_queue_init* const ring, const int server_socket_fd)
+static void event_loop(io_uring_queue_init* const ring)
 {	while (true)
 	{	//io_uring_cqe* cqe;
 		//int ret = io_uring_wait_cqe(ring, &cqe);
@@ -138,5 +147,5 @@ int main(int, char**)
 		socket::listen(sSocket.m_i, SOMAXCONN);
 	}
 	sRing.createAccept(s_sAccept, std::make_shared<io_data_created_fd>(sSocket.m_i, false));
-	event_loop(&sRing, sSocket.m_i);
+	event_loop(&sRing);
 }

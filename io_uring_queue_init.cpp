@@ -15,8 +15,8 @@ struct io_data_accept:io_data
 	//const std::shared_ptr<io_data_created_fd> m_sFD;
 	//foelsche::linux::io_uring_queue_init *const ring;
 
-	io_data_accept(io_uring_queue_init *const _pRing, HANDLER _sHandler, std::shared_ptr<io_data_created_fd> _sData)
-		:io_data(std::move(_sHandler), std::move(_sData)),
+	io_data_accept(io_uring_queue_init *const _pRing, HANDLER _sHandler, const std::shared_ptr<io_data_created_fd> &_sData)
+		:io_data(std::move(_sHandler), _sData),
 		client_len(sizeof(struct sockaddr_in))
 		//m_sFD(std::move(_sData))
 		//ring(_pRing)
@@ -42,8 +42,8 @@ struct io_data_accept:io_data
 struct io_data_recv:io_data
 {	std::vector<char> m_sBuffer;
 	static constexpr const std::size_t SIZE = 1024;
-	io_data_recv(io_uring_queue_init *const _pRing, HANDLER _sHandler, std::shared_ptr<io_data_created_fd> _sData)
-		:io_data(std::move(_sHandler), std::move(_sData)),
+	io_data_recv(io_uring_queue_init *const _pRing, HANDLER _sHandler, const std::shared_ptr<io_data_created_fd> &_sData)
+		:io_data(std::move(_sHandler), _sData),
 		m_sBuffer(SIZE)
 		//m_sFD(std::move(_sData))
 	{
@@ -78,21 +78,21 @@ struct io_data_recv:io_data
 #endif
 	}
 	virtual std::shared_ptr<io_data_created> getResource(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE)
-	{	return nullptr;
+	{	return std::make_shared<io_data_created_buffer>(std::move(m_sBuffer));
 	}
 	virtual enumType getType(void) const
 	{	return eReceive;
 	}
 };
 }
-std::shared_ptr<io_data> io_uring_queue_init::createAccept(io_data::HANDLER _sHandler, std::shared_ptr<io_data_created_fd> _sData)
+std::shared_ptr<io_data> io_uring_queue_init::createAccept(io_data::HANDLER _sHandler, const std::shared_ptr<io_data_created_fd> &_sData)
 {	return *m_sIoData.insert(
-		std::make_shared<io_data_accept>(this, std::move(_sHandler), std::move(_sData)).get()->shared_from_this()
+		std::make_shared<io_data_accept>(this, std::move(_sHandler), _sData).get()->shared_from_this()
 	).first;
 }
-std::shared_ptr<io_data> io_uring_queue_init::createRecv(io_data::HANDLER _sHandler, std::shared_ptr<io_data_created_fd> _sData)
+std::shared_ptr<io_data> io_uring_queue_init::createRecv(io_data::HANDLER _sHandler, const std::shared_ptr<io_data_created_fd> &_sData)
 {	return *m_sIoData.insert(
-		std::make_shared<io_data_recv>(this, std::move(_sHandler), std::move(_sData)).get()->shared_from_this()
+		std::make_shared<io_data_recv>(this, std::move(_sHandler), _sData).get()->shared_from_this()
 	).first;
 }
 int io_uring_queue_init::getServerSocket(const io_data&_r)

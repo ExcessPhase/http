@@ -12,18 +12,18 @@ namespace
 struct io_data_accept:io_data
 {	struct sockaddr_in client_addr;
 	socklen_t client_len;
-	const std::shared_ptr<io_data_created_fd> m_sFD;
+	//const std::shared_ptr<io_data_created_fd> m_sFD;
 	//foelsche::linux::io_uring_queue_init *const ring;
 
 	io_data_accept(io_uring_queue_init *const _pRing, HANDLER _sHandler, std::shared_ptr<io_data_created_fd> _sData)
 		:io_data(std::move(_sHandler), std::move(_sData)),
-		client_len(sizeof(struct sockaddr_in)),
-		m_sFD(std::move(_sData))
+		client_len(sizeof(struct sockaddr_in))
+		//m_sFD(std::move(_sData))
 		//ring(_pRing)
 	{	io_uring_sqe* const sqe = io_uring_queue_init::io_uring_get_sqe(&_pRing->m_sRing);
 		io_uring_prep_accept(
 			sqe,
-			m_sFD->m_iID,
+			std::dynamic_pointer_cast<io_data_created_fd>(m_sData)->m_iID,
 			reinterpret_cast<struct sockaddr*>(&client_addr),
 			&client_len,
 			0
@@ -42,16 +42,16 @@ struct io_data_accept:io_data
 struct io_data_recv:io_data
 {	std::vector<char> m_sBuffer;
 	static constexpr const std::size_t SIZE = 1024;
-	const std::shared_ptr<io_data_created_fd> m_sFD;
 	io_data_recv(io_uring_queue_init *const _pRing, HANDLER _sHandler, std::shared_ptr<io_data_created_fd> _sData)
 		:io_data(std::move(_sHandler), std::move(_sData)),
-		m_sBuffer(SIZE),
-		m_sFD(std::move(_sData))
+		m_sBuffer(SIZE)
+		//m_sFD(std::move(_sData))
 	{
 #if 1
-		fcntl(m_sFD->m_iID, F_SETFL, fcntl(m_sFD->m_iID, F_GETFL, 0) | O_NONBLOCK);
+		const auto sFD = std::dynamic_pointer_cast<io_data_created_fd>(m_sData);
+		fcntl(sFD->m_iID, F_SETFL, fcntl(sFD->m_iID, F_GETFL, 0) | O_NONBLOCK);
 		io_uring_sqe* const sqe = io_uring_queue_init::io_uring_get_sqe(&_pRing->m_sRing);
-		io_uring_prep_recv(sqe, m_sFD->m_iID, m_sBuffer.data(), m_sBuffer.size(), 0);
+		io_uring_prep_recv(sqe, sFD->m_iID, m_sBuffer.data(), m_sBuffer.size(), 0);
 		io_uring_sqe_set_data(sqe, this);
 		io_uring_submit(&_pRing->m_sRing);
 #else
@@ -96,7 +96,7 @@ std::shared_ptr<io_data> io_uring_queue_init::createRecv(io_data::HANDLER _sHand
 	).first;
 }
 int io_uring_queue_init::getServerSocket(const io_data&_r)
-{	return dynamic_cast<const io_data_accept&>(_r).m_sFD->m_iID;
+{	return std::dynamic_pointer_cast<const io_data_created_fd>(_r.m_sData)->m_iID;
 }
 int io_uring_queue_init::getFD(io_data_created&_r)
 {	return dynamic_cast<const io_data_created_fd&>(_r).m_iID;

@@ -14,7 +14,7 @@ The main point established is how to nicely wrap the io_uring API into C++ lever
 To build just type `make` and run the created executable by typing `./http.exe` into the same shell and enter `http://localhost:8080/` in a browser running on the same machine. This currently hangs if multiple files are referenced by the returned `index.html`.
 The cpp files in this directory are:
 ### http.cpp
-Contains the `main()` function, the event loop and the handler code for asynchronous `accept()`- and `read()`-requests.
+Contains the `main()` function, the event loop and the handler code for asynchronous `accept()`- and `read()`and `write()`-requests.
 ### io_data.h, io_data.cpp
 A abstract class serving for io_requests and the calling of handlers from the request.
 ### io_uring_queue_init.h, io_uring_queue_init.cpp

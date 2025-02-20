@@ -19,7 +19,7 @@ Contains the `main()` function, the event loop and the handler code for asynchro
 A abstract class serving for io_requests and the calling of handlers from the request.
 ### io_uring_queue_init.h, io_uring_queue_init.cpp
 A RAII wrapper class for the function of the same name.
-A factory for `read()`- and `accept()`-requests and their implementation.
+A factory for `read()`- and `accept()` and `write()`-requests and their implementation.
 ### io_uring_wait_cqe.h
 A RAII wrapper class for the function of the same name
 ### socket.h

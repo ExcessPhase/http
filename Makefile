@@ -1,5 +1,5 @@
 all: http.exe
-CXXFLAGS=-std=c++17 -g -DNDEBUG
+CXXFLAGS=-std=c++17 -O3 -DNDEBUG
 
 clean:
 	rm -f http.exe

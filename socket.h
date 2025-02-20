@@ -9,6 +9,7 @@ namespace foelsche
 {
 namespace linux
 {
+	/// an RAII wrapper for socket()/close()
 struct socket
 {	const int m_i;
 	socket(const int domain, const int type, const int protocol)
@@ -23,8 +24,6 @@ struct socket
 	{	if (::bind(sockfd, addr, addrlen) == -1)
 			throw std::system_error(std::error_code(errno, std::generic_category()), "bind() failed!");
 	}
-//int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
-// int listen(int sockfd, int backlog);
 	static void listen(const int sockfd, const int backlog)
 	{	if (::listen(sockfd, backlog) == -1)
 			throw std::system_error(std::error_code(errno, std::generic_category()), "listen() failed!");

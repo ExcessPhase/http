@@ -41,6 +41,7 @@ struct io_uring_queue_init
 		else
 			throw std::bad_alloc();
 	}
+		/// factory methods for io-requests
 	std::shared_ptr<io_data> createAccept(io_data::HANDLER, const std::shared_ptr<io_data_created_fd>&);
 	std::shared_ptr<io_data> createRecv(io_data::HANDLER, const std::shared_ptr<io_data_created_fd>&);
 	static int getServerSocket(const io_data&);

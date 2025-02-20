@@ -8,9 +8,12 @@ namespace foelsche
 namespace linux
 {
 struct io_uring_queue_init;
+	/// an abstract wrapper for any resources created
+	/// pointed to by a stdLLshared_ptr
 struct io_data_created:std::enable_shared_from_this<io_data_created>
 {	virtual ~io_data_created(void) = default;
 };
+	/// derived for a file descriptor created by an accept() request
 struct io_data_created_fd:io_data_created
 {	const int m_iID;
 	const bool m_bClose;
@@ -24,6 +27,7 @@ struct io_data_created_fd:io_data_created
 			::close(m_iID);
 	}
 };
+	/// a buffer used for a read() request
 struct io_data_created_buffer:io_data_created
 {	std::vector<char> m_s;
 	io_data_created_buffer(std::vector<char> _s)
@@ -31,9 +35,12 @@ struct io_data_created_buffer:io_data_created
 	{
 	}
 };
+	/// the C++ base type of a request
 struct io_data:std::enable_shared_from_this<io_data>
-{	typedef std::function<void(io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created>&, io_data&) > HANDLER;
-	HANDLER m_sHandler;
+{		/// the type of a handler
+	typedef std::function<void(io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created>&, io_data&) > HANDLER;
+		/// the stored handler
+	const HANDLER m_sHandler;
 	const std::shared_ptr<io_data_created> m_sData;
 	io_data(HANDLER _s, const std::shared_ptr<io_data_created> &_sData)
 		:m_sHandler(std::move(_s)),
@@ -48,7 +55,6 @@ struct io_data:std::enable_shared_from_this<io_data>
 		eReceive
 	};
 	virtual enumType getType(void) const = 0;
-	//virtual void handle(io_uring_queue_init*const, ::io_uring_cqe* const ) = 0;
 };
 }
 }

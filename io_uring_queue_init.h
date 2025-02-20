@@ -14,6 +14,7 @@ namespace foelsche
 namespace linux
 {
 struct io_data;
+	/// a RAII wrapper for the ioring call of the same name
 struct io_uring_queue_init
 {	std::set<std::shared_ptr<io_data> > m_sIoData;
 	struct io_uring m_sRing;

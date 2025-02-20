@@ -9,6 +9,7 @@ namespace foelsche
 {
 namespace linux
 {
+	/// an RAII wrapper for the uring call of the same name
 struct io_uring_wait_cqe
 {	struct ::io_uring *const m_pRing;
 	::io_uring_cqe *const m_pCQE;

@@ -14,11 +14,11 @@ To build just do `g++ -std=c++14 *.cpp -luring -O3 -DNDEBUG` and run the created
 The cpp files in this directory are:
 ### http.cpp
 Contains the `main()` function.
-### epoll_create1.h
-### io_data.cpp
-### io_data.h
-### io_uring_queue_init.cpp
-### io_uring_queue_init.h
+### io_data.h, io_data.cpp
+A abstract class serving for io_requests.
+### io_uring_queue_init.h, io_uring_queue_init.cpp
+A RAII wrapper class for the function of the same name
 ### io_uring_wait_cqe.h
+A RAII wrapper class for the function of the same name
 ### socket.h
-
+A RAII wrapper class for the function of the same name

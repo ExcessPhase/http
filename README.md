@@ -8,7 +8,7 @@
 ## Introduction
 
 This prototype was only intended for me to understand the asynchronous io library called [io_uring](https://github.com/axboe/liburing) library and to make it safe to use in C++ without running the risk of leaking memory or system handles.
-The prototype currently only accepts connection requests and reads input from the client.
+The prototype currently only accepts connection requests and reads input from the client and answers if there is a GET request.
 The main point established is how to nicely wrap the io_uring API into C++ leveraging RAII and Exception Handling.
 To build just do `g++ -std=c++14 *.cpp -luring -O3 -DNDEBUG` and run the created executable by typing `./a.out` into the same shell and enter `http://localhost:8080/` in a browser running on the same machine. The process will do nothing else than printing out the text it received from the browser.
 The cpp files in this directory are:

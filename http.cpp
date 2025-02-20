@@ -18,18 +18,22 @@ using namespace foelsche::linux;
 static const io_data::HANDLER s_sWrite = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
 {	const auto sBuffer = io_data::getWriteBuffer(_r);
 	const auto iOffset = io_data::getWriteOffset(_r);
+	std::cerr << "write request finished " << cqe->res << std::endl;
 	if (iOffset + cqe->res < sBuffer->m_s.size())
+	{	std::cerr << "scheduling missing write for missing data of " << sBuffer->m_s.size() - iOffset + cqe->res << std::endl;
 		ring->createWrite(
 			s_sWrite,
 			std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData),
 			sBuffer,
 			iOffset + cqe->res
 		);
+	}
 };
 static std::vector<char> read_file_to_vector(const char*const filename, const char *const _pPrefix)
 {
 	std::ifstream file(filename, std::ios::binary);
 
+	std::cerr << "opening file: " << filename << std::endl;
 	// Check if the file is open
 	if (!file.is_open()) {
 		throw std::runtime_error("Could not open file");
@@ -106,7 +110,7 @@ static const std::map<io_data::enumType, io_data::HANDLER> sType2Handler = {
 	/// blocking
 	/// only serves maximally 8 events
 static void event_loop(io_uring_queue_init* const ring)
-{	for (std::size_t i = 0; i < 8; ++i)
+{	while (true)
 	{	io_uring_wait_cqe sCQE(&ring->m_sRing);
 		if (sCQE.m_pCQE->res < 0)
 			std::cerr << "Async operation failed: " << std::strerror(-sCQE.m_pCQE->res) << std::endl;

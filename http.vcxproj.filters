@@ -18,16 +18,30 @@
     <ClCompile Include="http.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="io_data.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="io_uring_queue_init.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="http.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="socket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="epoll_create1.h">
+    <ClInclude Include="io_data.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="io_uring_queue_init.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="io_uring_wait_cqe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

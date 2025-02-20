@@ -10,6 +10,7 @@
 #include <fstream>
 #include <regex>
 #include <string>
+#include <filesystem>
 namespace foelsche
 {
 namespace http
@@ -29,7 +30,18 @@ static const io_data::HANDLER s_sWrite = [](io_uring_queue_init*const ring, ::io
 		);
 	}
 };
-static std::vector<char> read_file_to_vector(const char*const filename, const char *const _pPrefix)
+static std::string getPrefix(const char *const _pFileName)
+{	const std::filesystem::path sPath(_pFileName);
+	if (sPath.extension() == ".png")
+		return "HTTP/1.1 200 OK\r\n"
+			"Content-Type: image/png\r\n"
+			"Content-Length: " + std::to_string(file_size(sPath)) + "\r\n"
+			"Connection: close\r\n"
+			"\r\n";
+	else
+		return "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n";
+}
+static std::vector<char> read_file_to_vector(const char*const filename)
 {
 	std::ifstream file(filename, std::ios::binary);
 
@@ -40,7 +52,9 @@ static std::vector<char> read_file_to_vector(const char*const filename, const ch
 	}
 
 	// Read file contents into the vector
-	std::vector<char> s(_pPrefix, _pPrefix + std::strlen(_pPrefix));
+	const auto sPrefix = getPrefix(filename);
+	std::cerr << "prefix: " << sPrefix << std::endl;
+	std::vector<char> s(sPrefix.begin(), sPrefix.end());
 	s.insert(
 		s.end(),
 		std::istreambuf_iterator<char>(file),
@@ -66,7 +80,7 @@ static const io_data::HANDLER s_sReceive = [](io_uring_queue_init*const ring, ::
 	{		/// create a new async read()
 		ring->createRecv(s_sReceive, std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData));
 			/// printout the data received
-#if 0
+#if 1
 		for (const auto c : r)
 			if (std::isprint(c))
 				std::cerr << c;
@@ -79,8 +93,7 @@ static const io_data::HANDLER s_sReceive = [](io_uring_queue_init*const ring, ::
 			std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData),
 			std::make_shared<io_data_created_buffer>(
 				read_file_to_vector(
-					parse_filename(std::string(r.begin(), r.end())).c_str(),
-					"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n"
+					parse_filename(std::string(r.begin(), r.end())).c_str()
 				)
 			),
 			0

@@ -8,6 +8,8 @@
 #include <cstring>
 #include <map>
 #include <fstream>
+#include <regex>
+#include <string>
 namespace foelsche
 {
 namespace http
@@ -42,7 +44,15 @@ static std::vector<char> read_file_to_vector(const char*const filename, const ch
 	);
 	return s;
 }
+static std::string parse_filename(const std::string& request)
+{	static const std::regex get_regex(R"(GET\s\/([^?\s]+)\sHTTP\/1\.1)");
+	std::smatch match;
 
+	if (std::regex_search(request, match, get_regex) && match.size() > 1)
+		return match.str(1);
+	else
+		return "index.html";
+}
 	/// handler for read() system call
 static const io_data::HANDLER s_sReceive = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
 {	auto &r = std::dynamic_pointer_cast<io_data_created_buffer>(_sData)->m_s;
@@ -52,18 +62,20 @@ static const io_data::HANDLER s_sReceive = [](io_uring_queue_init*const ring, ::
 	{		/// create a new async read()
 		ring->createRecv(s_sReceive, std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData));
 			/// printout the data received
+#if 0
 		for (const auto c : r)
 			if (std::isprint(c))
 				std::cerr << c;
 			else
 				std::cerr << "\\0x" << unsigned(c);
 		std::cerr << std::endl;
+#endif
 		ring->createWrite(
 			s_sWrite,
 			std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData),
 			std::make_shared<io_data_created_buffer>(
 				read_file_to_vector(
-					"index.html",
+					parse_filename(std::string(r.begin(), r.end())).c_str(),
 					"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n"
 				)
 			),

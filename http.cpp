@@ -12,6 +12,9 @@ namespace foelsche
 namespace http
 {
 using namespace foelsche::linux;
+static const io_data::HANDLER s_sWrite = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
+{
+};
 	/// handler for read() system call
 static const io_data::HANDLER s_sReceive = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
 {	auto &r = std::dynamic_pointer_cast<io_data_created_buffer>(_sData)->m_s;
@@ -43,6 +46,9 @@ static const std::map<io_data::enumType, io_data::HANDLER> sType2Handler = {
 	},
 	{	io_data::eReceive,
 		s_sReceive
+	},
+	{	io_data::eWrite,
+		s_sWrite
 	}
 };
 	/// the event loop

@@ -45,6 +45,12 @@ struct io_uring_queue_init
 		/// factory methods for io-requests
 	std::shared_ptr<io_data> createAccept(io_data::HANDLER, const std::shared_ptr<io_data_created_fd>&);
 	std::shared_ptr<io_data> createRecv(io_data::HANDLER, const std::shared_ptr<io_data_created_fd>&);
+	std::shared_ptr<io_data> createWrite(
+		io_data::HANDLER,
+		const std::shared_ptr<io_data_created_fd>&,
+		const std::shared_ptr<io_data_created_buffer>&,
+		const std::size_t
+	);
 };
 }
 }

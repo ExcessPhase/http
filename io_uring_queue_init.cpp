@@ -57,6 +57,42 @@ struct io_data_recv:io_data
 	{	return eReceive;
 	}
 };
+struct io_data_write:io_data
+{	const std::shared_ptr<io_data_created_buffer> m_sData;
+	const std::size_t m_iOffset;
+	io_data_write(
+		io_uring_queue_init *const _pRing,
+		HANDLER _sHandler,
+		const std::shared_ptr<io_data_created_fd> &_rFD,
+		const std::shared_ptr<io_data_created_buffer>&_rData,
+		const std::size_t _iOffset
+	)
+		:io_data(
+			std::move(_sHandler),
+			_rFD
+		),
+		m_sData(_rData),
+		m_iOffset(_iOffset)
+	{
+		io_uring_sqe* const sqe = io_uring_queue_init::io_uring_get_sqe(&_pRing->m_sRing);
+		sqe->user_data = reinterpret_cast<uintptr_t>(this);
+		io_uring_prep_write(
+			sqe,
+			std::dynamic_pointer_cast<io_data_created_fd>(m_sData)->m_iID,
+			_rData->m_s.data() + _iOffset,
+			_rData->m_s.size() - _iOffset,
+			0
+		);
+		io_uring_sqe_set_data(sqe, this);
+		io_uring_submit(&_pRing->m_sRing);
+	}
+	virtual std::shared_ptr<io_data_created> getResource(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE)
+	{	return nullptr;
+	}
+	virtual enumType getType(void) const
+	{	return eWrite;
+	}
+};
 }
 	/// create an accept request
 std::shared_ptr<io_data> io_uring_queue_init::createAccept(io_data::HANDLER _sHandler, const std::shared_ptr<io_data_created_fd> &_sData)
@@ -68,6 +104,16 @@ std::shared_ptr<io_data> io_uring_queue_init::createAccept(io_data::HANDLER _sHa
 std::shared_ptr<io_data> io_uring_queue_init::createRecv(io_data::HANDLER _sHandler, const std::shared_ptr<io_data_created_fd> &_sData)
 {	return *m_sIoData.insert(
 		std::make_shared<io_data_recv>(this, std::move(_sHandler), _sData).get()->shared_from_this()
+	).first;
+}
+std::shared_ptr<io_data> io_uring_queue_init::createWrite(
+	io_data::HANDLER _sHandler,
+	const std::shared_ptr<io_data_created_fd> &_rFD,
+	const std::shared_ptr<io_data_created_buffer>&_rData,
+	const std::size_t _iOffset
+)
+{	return *m_sIoData.insert(
+		std::make_shared<io_data_write>(this, std::move(_sHandler), _rFD, _rData, _iOffset).get()->shared_from_this()
 	).first;
 }
 }

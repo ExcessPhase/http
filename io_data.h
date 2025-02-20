@@ -52,7 +52,8 @@ struct io_data:std::enable_shared_from_this<io_data>
 	void handleW(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE);
 	enum enumType
 	{	eAccept,
-		eReceive
+		eReceive,
+		eWrite
 	};
 	virtual enumType getType(void) const = 0;
 };

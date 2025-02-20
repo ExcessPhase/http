@@ -7,14 +7,42 @@
 #include <fcntl.h>
 #include <cstring>
 #include <map>
+#include <fstream>
 namespace foelsche
 {
 namespace http
 {
 using namespace foelsche::linux;
 static const io_data::HANDLER s_sWrite = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
-{
+{	const auto sBuffer = io_data::getWriteBuffer(_r);
+	const auto iOffset = io_data::getWriteOffset(_r);
+	if (iOffset + cqe->res < sBuffer->m_s.size())
+		ring->createWrite(
+			s_sWrite,
+			std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData),
+			sBuffer,
+			iOffset + cqe->res
+		);
 };
+static std::vector<char> read_file_to_vector(const char*const filename, const char *const _pPrefix)
+{
+	std::ifstream file(filename, std::ios::binary);
+
+	// Check if the file is open
+	if (!file.is_open()) {
+		throw std::runtime_error("Could not open file");
+	}
+
+	// Read file contents into the vector
+	std::vector<char> s(_pPrefix, _pPrefix + std::strlen(_pPrefix));
+	s.insert(
+		s.end(),
+		std::istreambuf_iterator<char>(file),
+		std::istreambuf_iterator<char>()
+	);
+	return s;
+}
+
 	/// handler for read() system call
 static const io_data::HANDLER s_sReceive = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
 {	auto &r = std::dynamic_pointer_cast<io_data_created_buffer>(_sData)->m_s;
@@ -30,6 +58,17 @@ static const io_data::HANDLER s_sReceive = [](io_uring_queue_init*const ring, ::
 			else
 				std::cerr << "\\0x" << unsigned(c);
 		std::cerr << std::endl;
+		ring->createWrite(
+			s_sWrite,
+			std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData),
+			std::make_shared<io_data_created_buffer>(
+				read_file_to_vector(
+					"index.html",
+					"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n"
+				)
+			),
+			0
+		);
 	}
 };
 	/// handler for accept() system call

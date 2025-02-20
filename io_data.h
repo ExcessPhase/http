@@ -56,6 +56,8 @@ struct io_data:std::enable_shared_from_this<io_data>
 		eWrite
 	};
 	virtual enumType getType(void) const = 0;
+	static std::size_t getWriteOffset(const io_data&);
+	static std::shared_ptr<io_data_created_buffer> getWriteBuffer(const io_data&);
 };
 }
 }

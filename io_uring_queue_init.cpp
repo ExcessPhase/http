@@ -58,7 +58,7 @@ struct io_data_recv:io_data
 	}
 };
 struct io_data_write:io_data
-{	const std::shared_ptr<io_data_created_buffer> m_sData;
+{	const std::shared_ptr<io_data_created_buffer> m_sBuffer;
 	const std::size_t m_iOffset;
 	io_data_write(
 		io_uring_queue_init *const _pRing,
@@ -71,14 +71,14 @@ struct io_data_write:io_data
 			std::move(_sHandler),
 			_rFD
 		),
-		m_sData(_rData),
+		m_sBuffer(_rData),
 		m_iOffset(_iOffset)
 	{
 		io_uring_sqe* const sqe = io_uring_queue_init::io_uring_get_sqe(&_pRing->m_sRing);
 		sqe->user_data = reinterpret_cast<uintptr_t>(this);
 		io_uring_prep_write(
 			sqe,
-			std::dynamic_pointer_cast<io_data_created_fd>(m_sData)->m_iID,
+			_rFD->m_iID,
 			_rData->m_s.data() + _iOffset,
 			_rData->m_s.size() - _iOffset,
 			0
@@ -93,6 +93,12 @@ struct io_data_write:io_data
 	{	return eWrite;
 	}
 };
+}
+std::size_t io_data::getWriteOffset(const io_data&_r)
+{	return dynamic_cast<const io_data_write&>(_r).m_iOffset;
+}
+std::shared_ptr<io_data_created_buffer> io_data::getWriteBuffer(const io_data&_r)
+{	return dynamic_cast<const io_data_write&>(_r).m_sBuffer;
 }
 	/// create an accept request
 std::shared_ptr<io_data> io_uring_queue_init::createAccept(io_data::HANDLER _sHandler, const std::shared_ptr<io_data_created_fd> &_sData)

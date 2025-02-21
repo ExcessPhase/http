@@ -62,7 +62,22 @@ static std::vector<char> read_file_to_vector(const char*const filename)
 	std::cerr << "opening file: " << filename << std::endl;
 	// Check if the file is open
 	if (!file.is_open()) {
-		throw std::runtime_error("Could not open file");
+		static const auto p =
+"HTTP/1.1 404 Not Found\r\n"
+"Content-Type: text/html\r\n"
+"Content-Length: 142\r\n"
+"\r\n"
+"<!DOCTYPE html>\r\n"
+"<html>\r\n"
+"<head>\r\n"
+"    <title>404 Not Found</title>\r\n"
+"</head>\r\n"
+"<body>\r\n"
+"    <h1>404 Not Found</h1>\r\n"
+"    <p>The requested resource could not be found on this server.</p>\r\n"
+"</body>\r\n"
+"</html>\r\n";
+		return std::vector<char>(p, p + std::strlen(p));
 	}
 
 	// Read file contents into the vector

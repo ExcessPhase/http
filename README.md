@@ -10,7 +10,7 @@
 This prototype was only intended for me to understand the asynchronous io library called [io_uring](https://github.com/axboe/liburing) library and to make it safe to use in C++ without running the risk of leaking memory or system handles.
 The prototype currently only accepts connection requests and reads input from the client and answers if there is a GET request.
 The main point established is how to nicely wrap the io_uring API into C++ leveraging RAII and Exception Handling.
-To build just type `make` and run the created executable by typing `./http.exe` in a current directory with an `index.html` (e.g. the boost directory) into the same shell and enter `http://localhost:8080/` in a browser running on the same machine. Currently the http server fails to find certain `.ico` files when opening `boost_1_87_0/index.html`.
+To build just type `make` and run the created executable by typing `./http.exe` in a current directory with an `index.html` (e.g. the boost directory) into the same shell and enter `http://localhost:8080/` in a browser running on the same machine. Currently the http server works fine when running inside  `boost_1_87_0/index.html`.
 The cpp files in this directory are:
 ### http.cpp
 Contains the `main()` function, the event loop and the handler code for asynchronous `accept()`- and `read()`and `write()`-requests.

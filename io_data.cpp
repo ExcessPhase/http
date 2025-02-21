@@ -12,5 +12,6 @@ void io_data::handleW(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _p
 		/// and removing the object from the set so that it can go away if not referenced by somebody else
 	_pRing->m_sIoData.erase(shared_from_this());
 }
+std::size_t io_data::s_iNextId;
 }
 }

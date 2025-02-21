@@ -16,6 +16,7 @@ namespace foelsche
 namespace http
 {
 using namespace foelsche::linux;
+static const io_data::HANDLER &getReceive(void);
 static const io_data::HANDLER s_sWrite = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
 {	const auto sBuffer = io_data::getWriteBuffer(_r);
 	const auto iOffset = io_data::getWriteOffset(_r);
@@ -29,6 +30,10 @@ static const io_data::HANDLER s_sWrite = [](io_uring_queue_init*const ring, ::io
 			iOffset + cqe->res
 		);
 	}
+	else
+	{	std::cerr << "scheduling read" << std::endl;
+		ring->createRecv(getReceive(), std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData));
+	}
 };
 static std::string getPrefix(const char *const _pFileName)
 {	const std::filesystem::path sPath(_pFileName);
@@ -36,10 +41,19 @@ static std::string getPrefix(const char *const _pFileName)
 		return "HTTP/1.1 200 OK\r\n"
 			"Content-Type: image/png\r\n"
 			"Content-Length: " + std::to_string(file_size(sPath)) + "\r\n"
-			"Connection: close\r\n"
+			//"Connection: close\r\n"
 			"\r\n";
 	else
-		return "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n";
+	if (sPath.extension() == ".css")
+		return "HTTP/1.1 200 OK\r\n"
+			"Content-Type: text/css\r\n"
+			"Content-Length: " + std::to_string(file_size(sPath)) + "\r\n"
+			"\r\n";
+	else
+		return "HTTP/1.1 200 OK\r\n"
+			"Content-Type: text/html\r\n"
+			"Content-Length: " + std::to_string(file_size(sPath)) + "\r\n"
+			"\r\n";
 }
 static std::vector<char> read_file_to_vector(const char*const filename)
 {
@@ -60,6 +74,16 @@ static std::vector<char> read_file_to_vector(const char*const filename)
 		std::istreambuf_iterator<char>(file),
 		std::istreambuf_iterator<char>()
 	);
+	std::cerr << "data size = " << s.size() << std::endl;
+	std::cerr << "sPrefix size = " << sPrefix.size() << std::endl;
+#if 0
+	for (const auto c : s)
+		if (std::isprint(c))
+			std::cerr << c;
+		else
+			std::cerr << "\\0x" << int(c);
+	std::cerr << std::endl;
+#endif
 	return s;
 }
 static std::string parse_filename(const std::string& request)
@@ -78,7 +102,7 @@ static const io_data::HANDLER s_sReceive = [](io_uring_queue_init*const ring, ::
 	r.resize(cqe->res);
 	if (!r.empty())
 	{		/// create a new async read()
-		ring->createRecv(s_sReceive, std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData));
+		//ring->createRecv(s_sReceive, std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData));
 			/// printout the data received
 #if 1
 		for (const auto c : r)
@@ -99,7 +123,12 @@ static const io_data::HANDLER s_sReceive = [](io_uring_queue_init*const ring, ::
 			0
 		);
 	}
+	else
+		std::cerr << "closing " << _r.getFD() << std::endl;
 };
+static const io_data::HANDLER &getReceive(void)
+{	return s_sReceive;
+}
 	/// handler for accept() system call
 static const io_data::HANDLER s_sAccept = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
 {		/// create a new async IO form accept
@@ -124,7 +153,9 @@ static const std::map<io_data::enumType, io_data::HANDLER> sType2Handler = {
 	/// only serves maximally 8 events
 static void event_loop(io_uring_queue_init* const ring)
 {	while (true)
-	{	io_uring_wait_cqe sCQE(&ring->m_sRing);
+	{	for (const auto &r : ring->m_sIoData)
+			std::cerr << typeid(*r).name() << ":" << r->getFD() << ":" << r->m_iId << std::endl;
+		io_uring_wait_cqe sCQE(&ring->m_sRing);
 		if (sCQE.m_pCQE->res < 0)
 			std::cerr << "Async operation failed: " << std::strerror(-sCQE.m_pCQE->res) << std::endl;
 		else

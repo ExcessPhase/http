@@ -34,6 +34,9 @@ struct io_data_accept:io_data
 	virtual enumType getType(void) const
 	{	return eAccept;
 	}
+	virtual int getFD(void) const override
+	{	return std::dynamic_pointer_cast<io_data_created_fd>(m_sData)->m_iID;
+	}
 };
 	/// a read request
 struct io_data_recv:io_data
@@ -55,6 +58,9 @@ struct io_data_recv:io_data
 	}
 	virtual enumType getType(void) const
 	{	return eReceive;
+	}
+	virtual int getFD(void) const override
+	{	return std::dynamic_pointer_cast<io_data_created_fd>(m_sData)->m_iID;
 	}
 };
 struct io_data_write:io_data
@@ -91,6 +97,9 @@ struct io_data_write:io_data
 	}
 	virtual enumType getType(void) const
 	{	return eWrite;
+	}
+	virtual int getFD(void) const override
+	{	return std::dynamic_pointer_cast<io_data_created_fd>(m_sData)->m_iID;
 	}
 };
 }

@@ -42,6 +42,8 @@ struct io_data:std::enable_shared_from_this<io_data>
 		/// the stored handler
 	const HANDLER m_sHandler;
 	const std::shared_ptr<io_data_created> m_sData;
+	static std::size_t s_iNextId;
+	const std::size_t m_iId = s_iNextId++;
 	io_data(HANDLER _s, const std::shared_ptr<io_data_created> &_sData)
 		:m_sHandler(std::move(_s)),
 		m_sData(_sData)
@@ -56,6 +58,7 @@ struct io_data:std::enable_shared_from_this<io_data>
 		eWrite
 	};
 	virtual enumType getType(void) const = 0;
+	virtual int getFD(void) const = 0;
 	static std::size_t getWriteOffset(const io_data&);
 	static std::shared_ptr<io_data_created_buffer> getWriteBuffer(const io_data&);
 };

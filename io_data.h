@@ -30,8 +30,10 @@ struct io_data_created_fd:io_data_created
 	/// a buffer used for a read() request
 struct io_data_created_buffer:io_data_created
 {	std::vector<char> m_s;
-	io_data_created_buffer(std::vector<char> _s)
-		:m_s(std::move(_s))
+	std::size_t m_iOffset;
+	io_data_created_buffer(std::vector<char> _s, const std::size_t _iOffset = 0)
+		:m_s(std::move(_s)),
+		m_iOffset(_iOffset)
 	{
 	}
 };

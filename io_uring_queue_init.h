@@ -54,7 +54,7 @@ struct io_uring_queue_init
 		const std::shared_ptr<io_data_created_fd>&,
 		const std::shared_ptr<io_data_created_buffer>&
 	);
-	std::shared_ptr<io_data> createWrite(
+	std::shared_ptr<io_data> createSend(
 		io_data::HANDLER,
 		const std::shared_ptr<io_data_created_fd>&,
 		const std::shared_ptr<io_data_created_buffer>&

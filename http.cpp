@@ -17,16 +17,16 @@ namespace http
 using namespace foelsche::linux;
 static constexpr const std::size_t BUFFER_SIZE = 16384;
 static const io_data::HANDLER &getReceive(void);
-static const io_data::HANDLER &getWrite(void)
+static const io_data::HANDLER &getSend(void)
 {	static const io_data::HANDLER s = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
-	{	const auto sBuffer = io_data::getWriteBuffer(_r);
-		const auto iOffset = io_data::getWriteOffset(_r);
+	{	const auto sBuffer = io_data::getSendBuffer(_r);
+		const auto iOffset = io_data::getSendOffset(_r);
 		std::cerr << "write request finished " << cqe->res << std::endl;
 		if (iOffset + cqe->res < sBuffer->m_s.size())
 		{	std::cerr << "scheduling missing write for missing data of " << sBuffer->m_s.size() - iOffset + cqe->res << std::endl;
 			sBuffer->m_iOffset += cqe->res;
-			ring->createWrite(
-				getWrite(),
+			ring->createSend(
+				getSend(),
 				std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData),
 				sBuffer
 			);
@@ -137,8 +137,8 @@ static const io_data::HANDLER &getReceive(void)
 				std::cerr << std::endl;
 #endif
 					/// printout the data received
-				ring->createWrite(
-					getWrite(),
+				ring->createSend(
+					getSend(),
 					std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData),
 					std::make_shared<io_data_created_buffer>(
 						read_file_to_vector(

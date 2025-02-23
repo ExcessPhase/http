@@ -55,8 +55,8 @@ struct io_data:std::enable_shared_from_this<io_data>
 	virtual std::shared_ptr<io_data_created> getResource(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE) = 0;
 	void handleW(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE);
 	virtual int getFD(void) const = 0;
-	static std::size_t getWriteOffset(const io_data&);
-	static std::shared_ptr<io_data_created_buffer> getWriteBuffer(const io_data&);
+	static std::size_t getSendOffset(const io_data&);
+	static std::shared_ptr<io_data_created_buffer> getSendBuffer(const io_data&);
 };
 }
 }

@@ -16,6 +16,7 @@ namespace foelsche
 namespace http
 {
 using namespace foelsche::linux;
+static constexpr const std::size_t BUFFER_SIZE = 16384;
 static const io_data::HANDLER &getReceive(void);
 static const io_data::HANDLER s_sWrite = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
 {	const auto sBuffer = io_data::getWriteBuffer(_r);
@@ -32,7 +33,7 @@ static const io_data::HANDLER s_sWrite = [](io_uring_queue_init*const ring, ::io
 	}
 	else
 	{	std::cerr << "scheduling read" << std::endl;
-		ring->createRecv(getReceive(), std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData), std::make_shared<io_data_created_buffer>(std::vector<char>(16384), 0));
+		ring->createRecv(getReceive(), std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData), std::make_shared<io_data_created_buffer>(std::vector<char>(BUFFER_SIZE), 0));
 	}
 };
 static std::string getPrefix(const char *const _pFileName)
@@ -113,7 +114,6 @@ static std::string parse_filename(const std::string& request)
 	/// handler for read() system call
 static const io_data::HANDLER s_sReceive = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
 {
-		/// shrink the buffer to match the received number of bytes
 	if (cqe->res > 0)
 	{	auto pBuffer = std::dynamic_pointer_cast<io_data_created_buffer>(_sData);
 		auto &iOffset = pBuffer->m_iOffset;
@@ -125,15 +125,15 @@ static const io_data::HANDLER s_sReceive = [](io_uring_queue_init*const ring, ::
 			"\r\n\r\n"
 		))
 		{
-				/// printout the data received
-	#if 1
+#if 1
 			for (const auto c : rBuffer)
 				if (std::isprint(c))
 					std::cerr << c;
 				else
 					std::cerr << "\\0x" << unsigned(c);
 			std::cerr << std::endl;
-	#endif
+#endif
+				/// printout the data received
 			ring->createWrite(
 				s_sWrite,
 				std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData),
@@ -147,12 +147,15 @@ static const io_data::HANDLER s_sReceive = [](io_uring_queue_init*const ring, ::
 		}
 		else
 		{	iOffset += cqe->res;
-			rBuffer.resize(iOffset + 16384);
+			rBuffer.resize(iOffset + BUFFER_SIZE);
 			ring->createRecv(s_sReceive, std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData), pBuffer);
 		}
 	}
 	else
-		std::cerr << "error: request not terminated " << _r.getFD() << std::endl;
+		if (cqe->res == 0)
+			std::cerr << "EOF=" << _r.getFD() << std::endl;
+		else
+			std::cerr << "error=" << std::strerror(-cqe->res) << ":" << _r.getFD() << std::endl;
 };
 static const io_data::HANDLER &getReceive(void)
 {	return s_sReceive;
@@ -162,7 +165,7 @@ static const io_data::HANDLER s_sAccept = [](io_uring_queue_init*const ring, ::i
 {		/// create a new async IO form accept
 	ring->createAccept(s_sAccept, std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData));
 		/// create an async read()
-	ring->createRecv(s_sReceive, std::dynamic_pointer_cast<io_data_created_fd>(_sData), std::make_shared<io_data_created_buffer>(std::vector<char>(16384), 0));
+	ring->createRecv(s_sReceive, std::dynamic_pointer_cast<io_data_created_fd>(_sData), std::make_shared<io_data_created_buffer>(std::vector<char>(BUFFER_SIZE), 0));
 };
 	/// map of enum to handler
 static const std::map<io_data::enumType, io_data::HANDLER> sType2Handler = {

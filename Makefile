@@ -1,5 +1,5 @@
 all: http.exe
-CXXFLAGS=-std=c++17 -O3 -DNDEBUG -flto=auto -MMD -MP
+CXXFLAGS=-std=c++17 -g -DNDEBUG -flto=auto -MMD -MP -fsanitize=address -fno-omit-frame-pointer
 
 OBJECTS=http.o io_data.o io_uring_queue_init.o
 

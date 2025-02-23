@@ -41,7 +41,6 @@ struct io_data_accept:io_data
 	/// a read request
 struct io_data_recv:io_data
 {	const std::shared_ptr<io_data_created_buffer> m_sBuffer;
-	static constexpr const std::size_t SIZE = 1024;
 	io_data_recv(
 		io_uring_queue_init *const _pRing,
 		HANDLER _sHandler,
@@ -54,7 +53,7 @@ struct io_data_recv:io_data
 		fcntl(sFD->m_iID, F_SETFL, fcntl(sFD->m_iID, F_GETFL, 0) | O_NONBLOCK);
 		io_uring_sqe* const sqe = io_uring_queue_init::io_uring_get_sqe(&_pRing->m_sRing);
 		sqe->user_data = reinterpret_cast<uintptr_t>(this);
-		io_uring_prep_recv(sqe, sFD->m_iID, m_sBuffer->m_s.data() + m_sBuffer->m_iOffset, m_sBuffer->m_s.size() + m_sBuffer->m_iOffset, 0);
+		io_uring_prep_recv(sqe, sFD->m_iID, m_sBuffer->m_s.data() + m_sBuffer->m_iOffset, m_sBuffer->m_s.size() - m_sBuffer->m_iOffset, 0);
 		io_uring_sqe_set_data(sqe, this);
 		io_uring_submit(&_pRing->m_sRing);
 	}

@@ -54,12 +54,6 @@ struct io_data:std::enable_shared_from_this<io_data>
 	virtual ~io_data(void) = default;
 	virtual std::shared_ptr<io_data_created> getResource(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE) = 0;
 	void handleW(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE);
-	enum enumType
-	{	eAccept,
-		eReceive,
-		eWrite
-	};
-	virtual enumType getType(void) const = 0;
 	virtual int getFD(void) const = 0;
 	static std::size_t getWriteOffset(const io_data&);
 	static std::shared_ptr<io_data_created_buffer> getWriteBuffer(const io_data&);

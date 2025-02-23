@@ -28,17 +28,40 @@ struct io_data_accept:io_data
 		io_uring_sqe_set_data(sqe, this);
 		io_uring_submit(&_pRing->m_sRing);
 	}
-	virtual std::shared_ptr<io_data_created> getResource(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE)
+	virtual std::shared_ptr<io_data_created> getResource(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE) override
 	{	return std::make_shared<io_data_created_fd>(_pCQE->res);
-	}
-	virtual enumType getType(void) const
-	{	return eAccept;
 	}
 	virtual int getFD(void) const override
 	{	return std::dynamic_pointer_cast<io_data_created_fd>(m_sData)->m_iID;
 	}
 };
-	/// a read request
+	/// a read request (from file)
+struct io_data_read:io_data
+{	const std::shared_ptr<io_data_created_buffer> m_sBuffer;
+	io_data_read(
+		io_uring_queue_init *const _pRing,
+		HANDLER _sHandler,
+		const std::shared_ptr<io_data_created_fd> &_rFD,
+		const std::shared_ptr<io_data_created_buffer> &_rBuffer
+	)
+		:io_data(std::move(_sHandler), _rFD),
+		m_sBuffer(_rBuffer)
+	{	const auto sFD = std::dynamic_pointer_cast<io_data_created_fd>(m_sData);
+		fcntl(sFD->m_iID, F_SETFL, fcntl(sFD->m_iID, F_GETFL, 0) | O_NONBLOCK);
+		io_uring_sqe* const sqe = io_uring_queue_init::io_uring_get_sqe(&_pRing->m_sRing);
+		sqe->user_data = reinterpret_cast<uintptr_t>(this);
+		io_uring_prep_read(sqe, sFD->m_iID, m_sBuffer->m_s.data() + m_sBuffer->m_iOffset, m_sBuffer->m_s.size() - m_sBuffer->m_iOffset, 0);
+		io_uring_sqe_set_data(sqe, this);
+		io_uring_submit(&_pRing->m_sRing);
+	}
+	virtual std::shared_ptr<io_data_created> getResource(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE) override
+	{	return m_sBuffer;
+	}
+	virtual int getFD(void) const override
+	{	return std::dynamic_pointer_cast<io_data_created_fd>(m_sData)->m_iID;
+	}
+};
+	/// a receive request (from socket)
 struct io_data_recv:io_data
 {	const std::shared_ptr<io_data_created_buffer> m_sBuffer;
 	io_data_recv(
@@ -57,11 +80,8 @@ struct io_data_recv:io_data
 		io_uring_sqe_set_data(sqe, this);
 		io_uring_submit(&_pRing->m_sRing);
 	}
-	virtual std::shared_ptr<io_data_created> getResource(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE)
+	virtual std::shared_ptr<io_data_created> getResource(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE) override
 	{	return m_sBuffer;
-	}
-	virtual enumType getType(void) const
-	{	return eReceive;
 	}
 	virtual int getFD(void) const override
 	{	return std::dynamic_pointer_cast<io_data_created_fd>(m_sData)->m_iID;
@@ -93,11 +113,8 @@ struct io_data_write:io_data
 		io_uring_sqe_set_data(sqe, this);
 		io_uring_submit(&_pRing->m_sRing);
 	}
-	virtual std::shared_ptr<io_data_created> getResource(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE)
+	virtual std::shared_ptr<io_data_created> getResource(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE) override
 	{	return nullptr;
-	}
-	virtual enumType getType(void) const
-	{	return eWrite;
 	}
 	virtual int getFD(void) const override
 	{	return std::dynamic_pointer_cast<io_data_created_fd>(m_sData)->m_iID;
@@ -114,6 +131,16 @@ std::shared_ptr<io_data_created_buffer> io_data::getWriteBuffer(const io_data&_r
 std::shared_ptr<io_data> io_uring_queue_init::createAccept(io_data::HANDLER _sHandler, const std::shared_ptr<io_data_created_fd> &_sData)
 {	return *m_sIoData.insert(
 		std::make_shared<io_data_accept>(this, std::move(_sHandler), _sData).get()->shared_from_this()
+	).first;
+}
+	/// create an read request
+std::shared_ptr<io_data> io_uring_queue_init::createRead(
+	io_data::HANDLER _sHandler,
+	const std::shared_ptr<io_data_created_fd> &_rFD,
+	const std::shared_ptr<io_data_created_buffer> &_rBuffer
+)
+{	return *m_sIoData.insert(
+		std::make_shared<io_data_read>(this, std::move(_sHandler), _rFD, _rBuffer).get()->shared_from_this()
 	).first;
 }
 	/// create an read request

@@ -6,7 +6,6 @@
 #include <netinet/in.h>
 #include <fcntl.h>
 #include <cstring>
-#include <map>
 #include <fstream>
 #include <regex>
 #include <string>
@@ -166,18 +165,6 @@ static const io_data::HANDLER s_sAccept = [](io_uring_queue_init*const ring, ::i
 	ring->createAccept(s_sAccept, std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData));
 		/// create an async read()
 	ring->createRecv(s_sReceive, std::dynamic_pointer_cast<io_data_created_fd>(_sData), std::make_shared<io_data_created_buffer>(std::vector<char>(BUFFER_SIZE), 0));
-};
-	/// map of enum to handler
-static const std::map<io_data::enumType, io_data::HANDLER> sType2Handler = {
-	{	io_data::eAccept,
-		s_sAccept
-	},
-	{	io_data::eReceive,
-		s_sReceive
-	},
-	{	io_data::eWrite,
-		s_sWrite
-	}
 };
 	/// the event loop
 	/// blocking

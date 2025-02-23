@@ -17,24 +17,27 @@ namespace http
 using namespace foelsche::linux;
 static constexpr const std::size_t BUFFER_SIZE = 16384;
 static const io_data::HANDLER &getReceive(void);
-static const io_data::HANDLER s_sWrite = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
-{	const auto sBuffer = io_data::getWriteBuffer(_r);
-	const auto iOffset = io_data::getWriteOffset(_r);
-	std::cerr << "write request finished " << cqe->res << std::endl;
-	if (iOffset + cqe->res < sBuffer->m_s.size())
-	{	std::cerr << "scheduling missing write for missing data of " << sBuffer->m_s.size() - iOffset + cqe->res << std::endl;
-		sBuffer->m_iOffset += cqe->res;
-		ring->createWrite(
-			s_sWrite,
-			std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData),
-			sBuffer
-		);
-	}
-	else
-	{	std::cerr << "scheduling read" << std::endl;
-		ring->createRecv(getReceive(), std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData), std::make_shared<io_data_created_buffer>(std::vector<char>(BUFFER_SIZE), 0));
-	}
-};
+static const io_data::HANDLER &getWrite(void)
+{	static const io_data::HANDLER s = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
+	{	const auto sBuffer = io_data::getWriteBuffer(_r);
+		const auto iOffset = io_data::getWriteOffset(_r);
+		std::cerr << "write request finished " << cqe->res << std::endl;
+		if (iOffset + cqe->res < sBuffer->m_s.size())
+		{	std::cerr << "scheduling missing write for missing data of " << sBuffer->m_s.size() - iOffset + cqe->res << std::endl;
+			sBuffer->m_iOffset += cqe->res;
+			ring->createWrite(
+				getWrite(),
+				std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData),
+				sBuffer
+			);
+		}
+		else
+		{	std::cerr << "scheduling read" << std::endl;
+			ring->createRecv(getReceive(), std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData), std::make_shared<io_data_created_buffer>(std::vector<char>(BUFFER_SIZE), 0));
+		}
+	};
+	return s;
+}
 static std::string getPrefix(const char *const _pFileName)
 {	const std::filesystem::path sPath(_pFileName);
 	if (sPath.extension() == ".png")
@@ -111,61 +114,64 @@ static std::string parse_filename(const std::string& request)
 		return "index.html";
 }
 	/// handler for read() system call
-static const io_data::HANDLER s_sReceive = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
-{
-	if (cqe->res > 0)
-	{	auto pBuffer = std::dynamic_pointer_cast<io_data_created_buffer>(_sData);
-		auto &iOffset = pBuffer->m_iOffset;
-		auto &rBuffer = pBuffer->m_s;
-		rBuffer.resize(iOffset + cqe->res);
-		if (rBuffer.size() > 3 && std::equal(
-			rBuffer.cbegin() + rBuffer.size() - 4,
-			rBuffer.cbegin() + rBuffer.size(),
-			"\r\n\r\n"
-		))
-		{
-#if 1
-			for (const auto c : rBuffer)
-				if (std::isprint(c))
-					std::cerr << c;
-				else
-					std::cerr << "\\0x" << unsigned(c);
-			std::cerr << std::endl;
-#endif
-				/// printout the data received
-			ring->createWrite(
-				s_sWrite,
-				std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData),
-				std::make_shared<io_data_created_buffer>(
-					read_file_to_vector(
-						parse_filename(std::string(rBuffer.begin(), rBuffer.end())).c_str()
-					),
-					0
-				)
-			);
-		}
-		else
-		{	iOffset += cqe->res;
-			rBuffer.resize(iOffset + BUFFER_SIZE);
-			ring->createRecv(s_sReceive, std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData), pBuffer);
-		}
-	}
-	else
-		if (cqe->res == 0)
-			std::cerr << "EOF=" << _r.getFD() << std::endl;
-		else
-			std::cerr << "error=" << std::strerror(-cqe->res) << ":" << _r.getFD() << std::endl;
-};
 static const io_data::HANDLER &getReceive(void)
-{	return s_sReceive;
+{	static const io_data::HANDLER s = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
+	{
+		if (cqe->res > 0)
+		{	auto pBuffer = std::dynamic_pointer_cast<io_data_created_buffer>(_sData);
+			auto &iOffset = pBuffer->m_iOffset;
+			auto &rBuffer = pBuffer->m_s;
+			rBuffer.resize(iOffset + cqe->res);
+			if (rBuffer.size() > 3 && std::equal(
+				rBuffer.cbegin() + rBuffer.size() - 4,
+				rBuffer.cbegin() + rBuffer.size(),
+				"\r\n\r\n"
+			))
+			{
+#if 1
+				for (const auto c : rBuffer)
+					if (std::isprint(c))
+						std::cerr << c;
+					else
+						std::cerr << "\\0x" << unsigned(c);
+				std::cerr << std::endl;
+#endif
+					/// printout the data received
+				ring->createWrite(
+					getWrite(),
+					std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData),
+					std::make_shared<io_data_created_buffer>(
+						read_file_to_vector(
+							parse_filename(std::string(rBuffer.begin(), rBuffer.end())).c_str()
+						),
+						0
+					)
+				);
+			}
+			else
+			{	iOffset += cqe->res;
+				rBuffer.resize(iOffset + BUFFER_SIZE);
+				ring->createRecv(getReceive(), std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData), pBuffer);
+			}
+		}
+		else
+			if (cqe->res == 0)
+				std::cerr << "EOF=" << _r.getFD() << std::endl;
+			else
+				std::cerr << "error=" << std::strerror(-cqe->res) << ":" << _r.getFD() << std::endl;
+	};
+	return s;
 }
 	/// handler for accept() system call
-static const io_data::HANDLER s_sAccept = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
-{		/// create a new async IO form accept
-	ring->createAccept(s_sAccept, std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData));
-		/// create an async read()
-	ring->createRecv(s_sReceive, std::dynamic_pointer_cast<io_data_created_fd>(_sData), std::make_shared<io_data_created_buffer>(std::vector<char>(BUFFER_SIZE), 0));
-};
+static const io_data::HANDLER &getAccept(void)
+{	static const io_data::HANDLER s = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
+	{		/// create a new async IO form accept
+		ring->createAccept(getAccept(), std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData));
+			/// create an async read()
+		ring->createRecv(getReceive(), std::dynamic_pointer_cast<io_data_created_fd>(_sData), std::make_shared<io_data_created_buffer>(std::vector<char>(BUFFER_SIZE), 0));
+	};
+	return s;
+}
 	/// the event loop
 	/// blocking
 	/// only serves maximally 8 events
@@ -209,7 +215,7 @@ int main(int, char**)
 		socket::listen(sSocket.m_i, SOMAXCONN);
 	}
 		/// create an accept object waiting for an incoming connection request
-	sRing.createAccept(s_sAccept, std::make_shared<io_data_created_fd>(sSocket.m_i, false));
+	sRing.createAccept(getAccept(), std::make_shared<io_data_created_fd>(sSocket.m_i, false));
 		/// call the event loop
 	event_loop(&sRing);
 }

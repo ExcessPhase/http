@@ -14,11 +14,57 @@ namespace foelsche
 {
 namespace http
 {
+/*	accept();
+	while (true)
+	{	bEOF = false;
+		do
+			if (bEOF = receive())
+				break;
+		while (no_empty_line_terminator);
+		if (bEOF)
+			break;
+		do
+			send(prefix);
+		while (not_fully_send);
+		do
+			read();
+			do
+				send(file);
+			while (not_fully_send);
+		while (not_read_until_end_of_file);
+	}
+*/
 using namespace foelsche::linux;
 static constexpr const std::size_t BUFFER_SIZE = 16384;
 static const io_data::HANDLER &getReceive(void);
+static const io_data::HANDLER &getRead(void);
+static const io_data::HANDLER &getSendPrefix(void)
+{	static const io_data::HANDLER s = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &, io_data&_r)
+	{	const auto sBuffer = io_data::getSendBuffer(_r);
+		const auto iOffset = io_data::getSendOffset(_r);
+		std::cerr << "write request finished " << cqe->res << std::endl;
+		if (iOffset + cqe->res < sBuffer->m_s.size())
+		{	std::cerr << "scheduling missing write for missing data of " << sBuffer->m_s.size() - iOffset + cqe->res << std::endl;
+			sBuffer->m_iOffset += cqe->res;
+			ring->createSend(
+				getSendPrefix(),
+				std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData),
+				sBuffer
+			);
+		}
+		else
+		{	std::cerr << "scheduling read" << std::endl;
+			ring->createRead(
+				getRead(),
+				std::dynamic_pointer_cast<io_data_created_fd>(_r.m_sData),
+				std::make_shared<io_data_created_buffer>(std::vector<char>(BUFFER_SIZE), 0)
+			);
+		}
+	};
+	return s;
+}
 static const io_data::HANDLER &getSend(void)
-{	static const io_data::HANDLER s = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &_sData, io_data&_r)
+{	static const io_data::HANDLER s = [](io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created> &, io_data&_r)
 	{	const auto sBuffer = io_data::getSendBuffer(_r);
 		const auto iOffset = io_data::getSendOffset(_r);
 		std::cerr << "write request finished " << cqe->res << std::endl;

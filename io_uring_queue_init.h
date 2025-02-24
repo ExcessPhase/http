@@ -43,19 +43,16 @@ struct io_uring_queue_init
 			throw std::bad_alloc();
 	}
 		/// factory methods for io-requests
-	std::shared_ptr<io_data> createAccept(io_data::HANDLER, const std::shared_ptr<io_data_created_fd>&);
+	std::shared_ptr<io_data> createAccept(const std::shared_ptr<io_data_created_fd>&);
 	std::shared_ptr<io_data> createRead(
-		io_data::HANDLER,
 		const std::shared_ptr<io_data_created_fd>&,
 		const std::shared_ptr<io_data_created_buffer>&
 	);
 	std::shared_ptr<io_data> createRecv(
-		io_data::HANDLER,
 		const std::shared_ptr<io_data_created_fd>&,
 		const std::shared_ptr<io_data_created_buffer>&
 	);
 	std::shared_ptr<io_data> createSend(
-		io_data::HANDLER,
 		const std::shared_ptr<io_data_created_fd>&,
 		const std::shared_ptr<io_data_created_buffer>&
 	);

@@ -39,24 +39,19 @@ struct io_data_created_buffer:io_data_created
 };
 	/// the C++ base type of a request
 struct io_data:std::enable_shared_from_this<io_data>
-{		/// the type of a handler
-	typedef std::function<void(io_uring_queue_init*const ring, ::io_uring_cqe* const cqe, const std::shared_ptr<io_data_created>&, io_data&) > HANDLER;
-		/// the stored handler
-	const HANDLER m_sHandler;
-	const std::shared_ptr<io_data_created> m_sData;
+{	const std::shared_ptr<io_data_created> m_sData;
 	static std::size_t s_iNextId;
 	const std::size_t m_iId = s_iNextId++;
-	io_data(HANDLER _s, const std::shared_ptr<io_data_created> &_sData)
-		:m_sHandler(std::move(_s)),
-		m_sData(_sData)
+	io_data(const std::shared_ptr<io_data_created> &_sData)
+		:m_sData(_sData)
 	{
 	}
 	virtual ~io_data(void) = default;
 	virtual std::shared_ptr<io_data_created> getResource(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE) = 0;
+	virtual void handle(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE) = 0;
 	void handleW(io_uring_queue_init*const _pRing, ::io_uring_cqe* const _pCQE);
 	virtual int getFD(void) const = 0;
-	static std::size_t getSendOffset(const io_data&);
-	static std::shared_ptr<io_data_created_buffer> getSendBuffer(const io_data&);
+	static constexpr const std::size_t BUFFER_SIZE = 16384;
 };
 }
 }

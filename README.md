@@ -1,4 +1,4 @@
-# http -- a prototype of a webserver for learning [io_uring](https://github.com/ExcessPhase/liburing)
+# http -- a prototype of a webserver for learning [io_uring](https://github.com/axboe/liburing)
 
 **Author**: Peter Foelsche |
 **Date**: February 2025 |
